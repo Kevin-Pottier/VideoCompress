@@ -6,9 +6,11 @@
 - Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
 - Choose output container (MP4 or MKV)
 - Enter the maximum output file size (in GB) via a dialog
+- Choose subtitle options via GUI: no subtitles, softcode (attach .srt), or hardcode (burn in)
+- Uses relative subtitle paths for better FFmpeg compatibility
 - Automatically calculates the required video bitrate for your target size
-- Generates and runs a batch file for compression
-- Cleans up after compression
+- Runs FFmpeg directly (no batch file needed)
+- Shows the FFmpeg command used
 
 ## Requirements
 - Python 3
@@ -27,8 +29,9 @@ pip install -r requirements.txt
 2. Select your video file in the dialog.
 3. Choose the output format (MP4 or MKV).
 4. Enter the maximum output file size (in GB) when prompted.
-5. The script will generate and run a batch file to compress your video to the target size.
-6. The batch file is deleted after successful compression.
+5. Choose subtitle options (no subtitles, softcode, or hardcode) and select a subtitle file if needed.
+6. The script will run FFmpeg directly to compress your video to the target size.
+7. The output file will be created in the same folder as the original video.
 
 - Only `.py`, `.gitignore`, and `README.Md` are tracked by git (see `.gitignore`).
 - All other files (videos, batch files, outputs) are ignored by git.

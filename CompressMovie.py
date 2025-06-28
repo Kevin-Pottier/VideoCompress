@@ -1,5 +1,6 @@
 import subprocess
 import os
+import os.path
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import simpledialog
@@ -30,18 +31,66 @@ print(Fore.YELLOW + "You can download them from https://ffmpeg.org/download.html
 # 6. The .bat file will be executed, and the output video will be created
 # 7. The .bat file will be deleted after the compression is done
 
-# === 1) Ask for the video file ===
-print("Choose a video file.\n")
-print(Fore.CYAN + "Tkinter should have opened a window to choose the file." + Style.RESET_ALL)
 
-# Initialize Tkinter and hide the main window
+# === 1) Ask for the video file and subtitle options ===
 
-root = tk.Tk()
-root.withdraw()
-file_path = filedialog.askopenfilename(
-    title="Choose a video file",
-    filetypes=[("Videos", "*.mp4 *.mkv *.avi")]
-)
+class SubtitleChoice:
+    def __init__(self):
+        self.file_path = None
+        self.root = tk.Tk()
+        self.sub_option = tk.StringVar(master=self.root, value="none")
+        self.sub_file = None
+        self.root.title("Video and Subtitle Options")
+        self.root.geometry("400x400")
+
+        tk.Label(self.root, text="Choose a video file:").pack(pady=5)
+        tk.Button(self.root, text="Browse Video", command=self.browse_video).pack(pady=5)
+        self.video_label = tk.Label(self.root, text="No file selected.")
+        self.video_label.pack(pady=5)
+
+        tk.Label(self.root, text="Subtitle options:").pack(pady=5)
+        self.rb_none = tk.Radiobutton(self.root, text="No subtitles", variable=self.sub_option, value="none", command=self.toggle_sub)
+        self.rb_soft = tk.Radiobutton(self.root, text="Softcode (attach .srt)", variable=self.sub_option, value="soft", command=self.toggle_sub)
+        self.rb_hard = tk.Radiobutton(self.root, text="Hardcode (burn in)", variable=self.sub_option, value="hard", command=self.toggle_sub)
+        self.rb_none.pack(anchor="w", padx=40)
+        self.rb_soft.pack(anchor="w", padx=40)
+        self.rb_hard.pack(anchor="w", padx=40)
+
+        self.sub_button = tk.Button(self.root, text="Choose Subtitle File", command=self.browse_sub, state="disabled")
+        self.sub_button.pack(pady=5)
+        self.sub_label = tk.Label(self.root, text="No subtitle file selected.")
+        self.sub_label.pack(pady=5)
+
+        tk.Button(self.root, text="OK", command=self.root.quit).pack(pady=10)
+        self.root.after(100, self.toggle_sub)  # Ensure correct initial state
+        self.root.mainloop()
+        self.root.destroy()
+
+    def browse_video(self):
+        path = filedialog.askopenfilename(title="Choose a video file", filetypes=[("Videos", "*.mp4 *.mkv *.avi")])
+        if path:
+            self.file_path = path
+            self.video_label.config(text=os.path.basename(path))
+
+    def browse_sub(self):
+        path = filedialog.askopenfilename(title="Choose subtitle file", filetypes=[("Subtitles", "*.srt *.ass")])
+        if path:
+            self.sub_file = path
+            self.sub_label.config(text=os.path.basename(path))
+
+    def toggle_sub(self, *args):
+        if self.sub_option.get() == "none":
+            self.sub_button.config(state="disabled")
+            self.sub_label.config(text="No subtitle file selected.")
+            self.sub_file = None
+        else:
+            self.sub_button.config(state="normal")
+
+# Launch the dialog
+choice_dialog = SubtitleChoice()
+file_path = choice_dialog.file_path
+sub_option = choice_dialog.sub_option.get()
+sub_file = choice_dialog.sub_file
 
 if not file_path:
     print(Fore.RED + "No file selected." + Style.RESET_ALL)
@@ -130,33 +179,48 @@ video_bitrate_kbps = int(video_bitrate / 1000) # in kbps
 
 print(f"Target Video Bitrate: {video_bitrate_kbps} kbps") 
 
-# === 5) Generate the .bat ===
-
+# === 5) Build ffmpeg command based on subtitle option ===
 output_file = os.path.splitext(file_path)[0] + f"_compressed.{ext}"
-bat_filename = "compress_video.bat"
 
-bat_content = f"""@echo off
-ffmpeg -i "{file_path}" -c:v libx264 -b:v {video_bitrate_kbps}k -preset medium -c:a aac -b:a 192k -movflags +faststart "{output_file}"
-pause
-"""
+# Handle subtitle options
 
-with open(bat_filename, "w", encoding="utf-8") as f:
-    f.write(bat_content)
 
-print(f"\n✅ Batch file generated: {bat_filename}")
-print(f"It will create: {output_file}")
+if sub_option == "soft":
+    rel_sub_file = os.path.relpath(sub_file, start=os.path.dirname(file_path))
+    ffmpeg_cmd = [
+    "ffmpeg", "-i", file_path,
+    "-i", rel_sub_file,
+    "-c:s", "mov_text",
+    "-map", "0:v", "-map", "0:a", "-map", "1:s",
+    "-c:v", "libx264", "-b:v", f"{video_bitrate_kbps}k",
+    "-preset", "medium", "-c:a", "aac", "-b:a", "192k",
+    "-movflags", "+faststart"
+]
 
-# === 6) Launch the .bat and wait for it to finish ===
+else:
+    
+    ffmpeg_cmd = [
+            "ffmpeg", "-i", file_path, 
+            "-c:v", "libx264", "-b:v", f"{video_bitrate_kbps}k",
+            "-preset", "medium", "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "+faststart"
+        ]
+    
+    if sub_option == "hard" and sub_file:
+        rel_sub_file = os.path.relpath(sub_file, start=os.path.dirname(file_path)).replace("\\", "/")
+        ffmpeg_cmd += ["-vf", f"subtitles={rel_sub_file}"]
+    
+    
 
-ret = subprocess.call([bat_filename], shell=True)
+ffmpeg_cmd += [output_file, "-y"]
 
-# === 7) Delete the .bat AFTER compression ===
+print(Fore.YELLOW + f"\nRunning ffmpeg with subtitles option: {sub_option}\n\n" + Style.RESET_ALL)
+print("\tCommand:", " ".join(ffmpeg_cmd))
+print()
+
+ret = subprocess.call(ffmpeg_cmd)
 
 if ret == 0:
-    try:
-        os.remove(bat_filename)
-        print(Fore.GREEN + f"{bat_filename} deleted." + Style.RESET_ALL)
-    except Exception as e:
-        print(Fore.RED + f"Error deleting {bat_filename}: {e}" + Style.RESET_ALL)
+    print(Fore.GREEN + f"\n✅ Compression finished. Output: {output_file}" + Style.RESET_ALL)
 else:
-    print(Fore.RED + f"Batch file exited with code {ret}, file not deleted." + Style.RESET_ALL)
+    print(Fore.RED + f"\n❌ Compression failed." + Style.RESET_ALL)
