@@ -2,6 +2,8 @@ import subprocess
 import os
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import simpledialog
+import tkinter.messagebox as messagebox
 from colorama import init, Fore, Style
 
 init()
@@ -10,6 +12,9 @@ init()
 # FFmpeg & FFprobe have to be in the PATH
 # You can download them from https://ffmpeg.org/download.html
 # Make sure to add the bin directory to your PATH environment variable
+
+print(Fore.YELLOW + "Ensure FFmpeg and FFprobe are installed and available in your PATH." + Style.RESET_ALL)
+print(Fore.YELLOW + "You can download them from https://ffmpeg.org/download.html\n" + Style.RESET_ALL)
 
 # === Requirements ===
 # Python 3.x
@@ -21,7 +26,7 @@ init()
 # 2. Choose a video file
 # 3. Choose the output container (MP4 or MKV)
 # 4. The script will extract metadata and calculate the target video bitrate
-# 5. It will generate a .bat file to compress the video to ~1.8 GB
+# 5. It will generate a .bat file to compress the video to a maximum size asked to the user
 # 6. The .bat file will be executed, and the output video will be created
 # 7. The .bat file will be deleted after the compression is done
 
@@ -42,7 +47,7 @@ if not file_path:
     print(Fore.RED + "No file selected." + Style.RESET_ALL)
     exit(1)
 
-# === 2) Choisir le conteneur de sortie ===
+# === 2) Choose the output container ===
 print("Choose the output container:")
 print("1 - MP4")
 print("2 - MKV")
@@ -67,27 +72,63 @@ def ffprobe(cmd):
     )
     return result.stdout.strip()
 
-duration = float(ffprobe(["ffprobe", "-v", "error", "-show_entries",
-                          "format=duration", "-of",
-                          "default=noprint_wrappers=1:nokey=1", file_path]))
 
-audio_bitrate = int(ffprobe(["ffprobe", "-v", "error", "-select_streams",
-                             "a:0", "-show_entries", "stream=bit_rate",
-                             "-of", "default=noprint_wrappers=1:nokey=1",
-                             file_path]))
+# --- Robust metadata extraction ---
+duration_str = ffprobe([
+    "ffprobe", "-v", "error", "-show_entries",
+    "format=duration", "-of",
+    "default=noprint_wrappers=1:nokey=1", file_path
+])
+try:
+    duration = float(duration_str)
+    if duration <= 0:
+        raise ValueError
+except Exception:
+    print(Fore.RED + f"Could not determine video duration (got '{duration_str}'). Aborting." + Style.RESET_ALL)
+    exit(1)
+
+audio_bitrate_str = ffprobe([
+    "ffprobe", "-v", "error", "-select_streams",
+    "a:0", "-show_entries", "stream=bit_rate",
+    "-of", "default=noprint_wrappers=1:nokey=1",
+    file_path
+])
+if not audio_bitrate_str or audio_bitrate_str == "N/A" or audio_bitrate_str == "0":
+    print(Fore.YELLOW + "Warning: Could not determine audio bitrate. Using default 128000 bps." + Style.RESET_ALL)
+    audio_bitrate = 128000
+else:
+    try:
+        audio_bitrate = int(audio_bitrate_str)
+    except Exception:
+        print(Fore.YELLOW + f"Warning: Unexpected audio bitrate value '{audio_bitrate_str}'. Using default 128000 bps." + Style.RESET_ALL)
+        audio_bitrate = 128000
 
 print(f"Duration: {duration:.2f} s")
 print(f"Audio Bitrate: {audio_bitrate} bps")
 
-# === 4) Calculate target video bitrate for ~1.8 GB ===
+# === 4) Calculate target video bitrate for a max video file size ===
+max_size_gb = float(simpledialog.askstring("Target Video Size", "Enter the maximum file size in GB:"))
 
-target_bits = 1.8 * 1024 * 1024 * 1024 * 8  # 1.8 GB in bits
-audio_bits_total = audio_bitrate * duration
-video_bits_total = target_bits - audio_bits_total
-video_bitrate = video_bits_total / duration
-video_bitrate_kbps = int(video_bitrate / 1000)
+if max_size_gb <= 0:
+    print(Fore.RED + "Invalid size. Must be greater than 0." + Style.RESET_ALL)
+    exit(1)
+# Make sure that the max size is smaller than the original file size
 
-print(f"Target Video Bitrate: {video_bitrate_kbps} kbps")
+file_size = os.path.getsize(file_path) / (1024 * 1024 * 1024)  # in GB
+print(f"Original File Size: {file_size:.2f} GB")
+
+# if max_size_gb > file_size:
+#     print(Fore.RED + f"Warning: The maximum size {max_size_gb} GB is larger than the original file size {file_size:.2f} GB." + Style.RESET_ALL)
+#     exit(1)
+
+# Calculate the target video bitrate
+target_bits = max_size_gb * 1024 * 1024 * 1024 * 8  # in bits
+audio_bits_total = audio_bitrate * duration # in bits
+video_bits_total = target_bits - audio_bits_total # in bits
+video_bitrate = video_bits_total / duration # in bits per second
+video_bitrate_kbps = int(video_bitrate / 1000) # in kbps
+
+print(f"Target Video Bitrate: {video_bitrate_kbps} kbps") 
 
 # === 5) Generate the .bat ===
 

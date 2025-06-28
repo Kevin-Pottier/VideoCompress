@@ -5,7 +5,8 @@
 ## Features
 - Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
 - Choose output container (MP4 or MKV)
-- Automatically calculates target bitrate for ~1.8GB output
+- Enter the maximum output file size (in GB) via a dialog
+- Automatically calculates the required video bitrate for your target size
 - Generates and runs a batch file for compression
 - Cleans up after compression
 
@@ -25,8 +26,9 @@ pip install -r requirements.txt
 1. Run `CompressMovie.py` with Python 3.
 2. Select your video file in the dialog.
 3. Choose the output format (MP4 or MKV).
-4. The script will generate and run a batch file to compress your video.
-5. The batch file is deleted after successful compression.
+4. Enter the maximum output file size (in GB) when prompted.
+5. The script will generate and run a batch file to compress your video to the target size.
+6. The batch file is deleted after successful compression.
 
 - Only `.py`, `.gitignore`, and `README.Md` are tracked by git (see `.gitignore`).
 - All other files (videos, batch files, outputs) are ignored by git.
