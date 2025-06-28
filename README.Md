@@ -6,7 +6,7 @@
 - Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
 - Choose output container (MP4 or MKV)
 - Enter the maximum output file size (in GB) via a dialog
-- Choose subtitle options via GUI: no subtitles, softcode (attach .srt), or hardcode (burn in)
+- Choose subtitle options via a dedicated dialog: no subtitles, softcode (attach .srt), or hardcode (burn in). If you select a subtitle option but do not choose a file, you will be prompted again.
 - Uses relative subtitle paths for better FFmpeg compatibility
 - Automatically calculates the required video bitrate for your target size
 - Runs FFmpeg directly (no batch file needed)
