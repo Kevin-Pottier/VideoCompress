@@ -3,14 +3,19 @@
 >This repository contains a simple Python script to compress video files to a target size using FFmpeg.
 
 ## Features
-- Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
-- Choose output container (MP4 or MKV)
-- Enter the maximum output file size (in GB) via a dialog
-- Choose subtitle options via a dedicated dialog: no subtitles, softcode (attach .srt), or hardcode (burn in). If you select a subtitle option but do not choose a file, you will be prompted again.
-- Uses relative subtitle paths for better FFmpeg compatibility
-- Automatically calculates the required video bitrate for your target size
-- Runs FFmpeg directly (no batch file needed)
-- Shows the FFmpeg command used
+- Choose usage mode at launch: Film Compression or Subtitle Translation
+- For Film Compression:
+  - Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
+  - Choose subtitle options via a dedicated dialog: no subtitles, softcode (attach .srt), or hardcode (burn in). If you select a subtitle option but do not choose a file, you will be prompted again.
+  - Choose output container (MP4 or MKV) via a dialog
+  - Enter the maximum output file size (in GB) via a dialog
+  - Uses relative subtitle paths for better FFmpeg compatibility
+  - Automatically calculates the required video bitrate for your target size
+  - Runs FFmpeg directly (no batch file needed)
+  - Shows the FFmpeg command used
+- For Subtitle Translation:
+  - Select a subtitle file to translate via a dialog
+  - (Translation logic placeholder: currently just prints the selected file)
 
 ## Requirements
 - Python 3
@@ -25,13 +30,21 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-1. Run `CompressMovie.py` with Python 3.
-2. Select your video file in the dialog.
-3. Choose the output format (MP4 or MKV).
-4. Enter the maximum output file size (in GB) when prompted.
-5. Choose subtitle options (no subtitles, softcode, or hardcode) and select a subtitle file if needed.
-6. The script will run FFmpeg directly to compress your video to the target size.
-7. The output file will be created in the same folder as the original video.
+1. Run the script:
+   `python CompressMovie.py`
+2. Choose the usage mode:
+   - **Film Compression**: Compress a video file with optional subtitles.
+   - **Subtitle Translation**: Select a subtitle file for translation (feature placeholder).
+3. Follow the dialogs for your chosen mode:
+   - For Film Compression:
+     - Select a video file.
+     - Choose subtitle options (none, softcode, hardcode). If you select softcode or hardcode, you must also select a subtitle file.
+     - Choose the output container (MP4 or MKV).
+     - Enter the maximum output file size (in GB).
+     - The script will extract video/audio metadata, calculate the required video bitrate, and run FFmpeg to compress the video.
+     - The output video will be created in the same folder as the original.
+   - For Subtitle Translation:
+     - Select a subtitle file. (Translation logic not yet implemented.)
 
 - Only `.py`, `.gitignore`, and `README.Md` are tracked by git (see `.gitignore`).
 - All other files (videos, batch files, outputs) are ignored by git.
