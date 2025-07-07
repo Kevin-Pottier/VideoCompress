@@ -1,9 +1,11 @@
+
 # CompressMovie
 
->This repository contains a simple Python script to compress video files to a target size using FFmpeg.
+> This repository now uses a modular Python project structure for video compression and subtitle translation using FFmpeg.
 
 ## Features
-- Choose usage mode at launch: Film Compression or Subtitle Translation
+- Modular codebase: main logic is split into `main.py`, `gui_film.py`, `gui_subtitle.py`, `compression.py`, and `utils.py`.
+- Choose usage mode at launch: Film Compression or Subtitle Translation (via a GUI dialog).
 - For Film Compression:
   - Select a video file via a GUI dialog (supports .mp4, .mkv, .avi)
   - Choose subtitle options via a dedicated dialog: no subtitles, softcode (attach .srt), or hardcode (burn in). If you select a subtitle option but do not choose a file, you will be prompted again.
@@ -31,7 +33,7 @@ pip install -r requirements.txt
 
 ## Usage
 1. Run the script:
-   `python CompressMovie.py`
+   `python main.py`
 2. Choose the usage mode:
    - **Film Compression**: Compress a video file with optional subtitles.
    - **Subtitle Translation**: Select a subtitle file for translation (feature placeholder).
@@ -46,12 +48,12 @@ pip install -r requirements.txt
    - For Subtitle Translation:
      - Select a subtitle file. (Translation logic not yet implemented.)
 
-- Only `.py`, `.gitignore`, and `README.Md` are tracked by git (see `.gitignore`).
-- All other files (videos, batch files, outputs) are ignored by git.
+- Only `.py`, `.gitignore`, `README.Md`, and `requirements.txt` are tracked by git (see `.gitignore`).
+- All other files (videos, batch files, outputs, and the old `CompressMovie.py`) are ignored by git.
 
 ## Troubleshooting
 
 - Only third-party packages (like `colorama`) are listed in `requirements.txt`. Standard Python libraries such as `os`, `subprocess`, and `tkinter` are included with every Python installation and do not need to be installed separately. If you encounter errors about missing standard libraries, your Python installation may be broken—reinstall Python from the official website to fix this.
 
 ---
-Feel free to modify the script for your own needs!
+Feel free to modify the project for your own needs!
